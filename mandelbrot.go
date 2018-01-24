@@ -1,4 +1,4 @@
-package mbrot
+package mandelbrot
 
 import (
 	"encoding/gob"

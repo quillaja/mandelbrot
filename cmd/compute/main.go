@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"mbrot"
+	mbrot "mandelbrot"
 	"runtime"
 	"sync"
 	"time"
