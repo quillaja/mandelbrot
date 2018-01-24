@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 )
 
 // Config is configuration info for the program, loaded from file.
@@ -63,7 +62,7 @@ func WriteConfig(c Config, filename string) {
 		panic(err)
 	}
 
-	err = ioutil.WriteFile(filename, data, os.ModePerm)
+	err = ioutil.WriteFile(filename, data, 664)
 	if err != nil {
 		panic(err)
 	}
