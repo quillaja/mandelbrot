@@ -36,8 +36,8 @@ func (c Config) GetJulia() complex128 {
 }
 
 func (c Config) String() string {
-	f := "Plot center:\t%0.5f, %0.5f\nPlot W, H:\t%0.5f, %0.5f\nIterations:\t%d\nJulia c =\t%0.5f + %0.5fi\nRamp:\t%s\nData:\t%s\nImage:\t%s"
-	return fmt.Sprintf(f, c.CenterReal, c.CenterImag, c.PlotWidth, c.PlotHeight, c.Iterations, c.JuliaReal, c.JuliaImag, c.RampFile, c.DataFile, c.ImageFile)
+	f := "Plot center:\t%0.5f, %0.5f\nPlot W, H:\t%0.5f, %0.5f\nImage size:\t%dx%d\nIterations:\t%d\nJulia c =\t%0.5f + %0.5fi\nRamp file:\t%s\nData file:\t%s\nImage file:\t%s"
+	return fmt.Sprintf(f, c.CenterReal, c.CenterImag, c.PlotWidth, c.PlotHeight, c.XRes, c.YRes, c.Iterations, c.JuliaReal, c.JuliaImag, c.RampFile, c.DataFile, c.ImageFile)
 }
 
 // NewConfig gets a Config with reasonable default values.
