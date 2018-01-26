@@ -69,7 +69,7 @@ func (coords *Set) Initialize(cfg Config) {
 }
 
 // Calculate performs `action` on all the coordinates in a MandelSet.
-func (coords Set) Calculate(action Action) {
+func (coords Set) Calculate(action Action, progress *float64) {
 	// concurrent implementation of actually computing mandelbrot set
 	//
 	// buffered input channel to hold values, 1 for each worker so none have
@@ -92,8 +92,10 @@ func (coords Set) Calculate(action Action) {
 	}
 
 	// send jobs to workers
-	for _, j := range coords {
+	total := float64(len(coords))
+	for i, j := range coords {
 		in <- j // will block when buffered channel is full
+		*progress = float64(i) / total
 	}
 
 	close(in) // close channel to stop workers

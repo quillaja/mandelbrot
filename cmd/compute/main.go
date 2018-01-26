@@ -33,13 +33,32 @@ func main() {
 		}
 	}
 
+	var progress float64
+	// progress output if verbose mode is on
+	if verbose {
+		go func() {
+			ticker := time.NewTicker(1 * time.Second)
+			for progress < 100.0 {
+				select {
+				case <-ticker.C:
+					// the ansi escape code here moves the cursor left 100 characters
+					cmd.VPrint(verbose, fmt.Sprintf("\u001b[100D%0.1f%% complete.", progress*100))
+				default:
+				}
+			}
+			ticker.Stop()
+		}()
+	}
+
 	// the data for the set
 	coords := mbrot.Set{}
-	coords.Initialize(cfg)   // set up
-	coords.Calculate(action) // do the work
+	coords.Initialize(cfg)              // set up
+	coords.Calculate(action, &progress) // do the work
+
+	progress = 100.0 // will stop the gofunc
 
 	// output data
-	cmd.VPrint(verbose, fmt.Sprintf("Writing data to %s.\n", cfg.DataFile))
+	cmd.VPrint(verbose, fmt.Sprintf("\nWriting data to %s.\n", cfg.DataFile))
 
 	mbrot.WriteData(coords, cfg.DataFile)
 
