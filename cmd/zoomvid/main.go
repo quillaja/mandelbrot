@@ -54,7 +54,7 @@ func main() {
 		if verbose {
 			fmt.Printf("Frame %d of %d\n", i, totalFrames)
 			fmt.Printf(" Iterations: %d\n", cfg.Iterations)
-			fmt.Printf(" Plot width: %0.8e. Set progress:\n", cfg.PlotWidth)
+			fmt.Printf(" Plot width: %0.8e\n", cfg.PlotWidth)
 			showProgress(&setProgress)
 		}
 
