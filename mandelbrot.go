@@ -12,22 +12,6 @@ import (
 	"sync"
 )
 
-// DEPRECATED
-// PrintToConsole displays the mandelbrot set as text on the console.
-// func PrintToConsole(coords Set) {
-// 	for i := 0; i < len(coords); i++ {
-// 		if coords[i].in {
-// 			fmt.Print("*")
-// 		} else {
-// 			fmt.Print(" ")
-// 		}
-
-// 		if (i+1)%width == 0 {
-// 			fmt.Print("\n")
-// 		}
-// 	}
-// }
-
 // Action is a function which takes a complex number and does iterations
 // to determine if the point is in a set (eg Mandelbrot set) or not. It also
 // returns the number of iterations.
@@ -74,7 +58,6 @@ func (coords Set) Calculate(action Action, progress *float64) {
 	//
 	// buffered input channel to hold values, 1 for each worker so none have
 	// to block while waiting for jobs
-
 	workers := runtime.NumCPU()
 	in := make(chan *Job, workers)
 
@@ -95,14 +78,17 @@ func (coords Set) Calculate(action Action, progress *float64) {
 	total := float64(len(coords))
 	for i, j := range coords {
 		in <- j // will block when buffered channel is full
-		*progress = float64(i) / total
+		if progress != nil {
+			*progress = float64(i+1) / total
+		}
 	}
 
 	close(in) // close channel to stop workers
 	wg.Wait() // wait for all workers to finish (join)
+
 }
 
-// WriteData writes a MandelSet to filename as a gob (go object serialization).
+// WriteData writes a Set to filename as a gob (go object serialization).
 func WriteData(coords Set, filename string) {
 	file, err := os.Create(filename)
 	defer file.Close()
@@ -211,7 +197,7 @@ func CreatePicture(coords Set, ramp []color.RGBA, width, height int, setColor co
 	return img
 }
 
-// OutputToJPG write an image.Image to the given output filename
+// OutputToJPG writes an image.Image to the given output filename
 func OutputToJPG(img image.Image, outputFilename string) {
 	file, err := os.Create(outputFilename)
 	defer file.Close()
@@ -223,3 +209,19 @@ func OutputToJPG(img image.Image, outputFilename string) {
 		panic(err)
 	}
 }
+
+// DEPRECATED
+// PrintToConsole displays the mandelbrot set as text on the console.
+// func PrintToConsole(coords Set) {
+// 	for i := 0; i < len(coords); i++ {
+// 		if coords[i].in {
+// 			fmt.Print("*")
+// 		} else {
+// 			fmt.Print(" ")
+// 		}
+
+// 		if (i+1)%width == 0 {
+// 			fmt.Print("\n")
+// 		}
+// 	}
+// }

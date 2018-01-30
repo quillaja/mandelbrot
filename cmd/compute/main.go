@@ -33,8 +33,8 @@ func main() {
 		}
 	}
 
-	var progress float64
 	// progress output if verbose mode is on
+	var progress float64
 	if verbose {
 		go func() {
 			ticker := time.NewTicker(1 * time.Second)
@@ -42,7 +42,7 @@ func main() {
 				select {
 				case <-ticker.C:
 					// the ansi escape code here moves the cursor left 100 characters
-					cmd.VPrint(verbose, fmt.Sprintf("\u001b[100D%0.1f%% complete.", progress*100))
+					fmt.Printf("\u001b[100D%0.1f%% complete.", progress*100)
 				default:
 				}
 			}
@@ -55,7 +55,7 @@ func main() {
 	coords.Initialize(cfg)              // set up
 	coords.Calculate(action, &progress) // do the work
 
-	progress = 100.0 // will stop the gofunc
+	progress = 100.0 // stop progress output
 
 	// output data
 	cmd.VPrint(verbose, fmt.Sprintf("\nWriting data to %s.\n", cfg.DataFile))
