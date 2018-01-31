@@ -38,7 +38,7 @@ func main() {
 	if verbose {
 		go func() {
 			ticker := time.NewTicker(1 * time.Second)
-			for progress < 100.0 {
+			for progress < 1.0 {
 				select {
 				case <-ticker.C:
 					// the ansi escape code here moves the cursor left 100 characters
@@ -52,10 +52,8 @@ func main() {
 
 	// the data for the set
 	coords := mbrot.Set{}
-	coords.Initialize(cfg)              // set up
-	coords.Calculate(action, &progress) // do the work
-
-	progress = 100.0 // stop progress output
+	coords.Initialize(cfg)                      // set up
+	coords.CalculateProgress(action, &progress) // do the work
 
 	// output data
 	cmd.VPrint(verbose, fmt.Sprintf("\nWriting data to %s.\n", cfg.DataFile))

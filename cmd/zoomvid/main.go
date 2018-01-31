@@ -36,7 +36,7 @@ func main() {
 	const zoomFactor = 1.1
 	const iterFactor = 25
 
-	totalFrames := totalFrames(zoomFactor, cfg.PlotWidth) - 1
+	totalFrames := totalFrames(zoomFactor, cfg.PlotWidth)
 	totalTime := 0.0
 
 	origPlotWidth := cfg.PlotWidth
@@ -57,7 +57,7 @@ func main() {
 		// show status
 		var setProgress float64
 		if verbose {
-			fmt.Printf("Frame %d of %d\n", i, totalFrames)
+			fmt.Printf("Frame %d of %d\n", i+1, totalFrames)
 			fmt.Printf(" Iterations: %d\n", cfg.Iterations)
 			fmt.Printf(" Plot width: %0.8e\n", cfg.PlotWidth)
 			showProgress(&setProgress)
@@ -66,9 +66,7 @@ func main() {
 		// do work
 		coords := m.Set{}
 		coords.Initialize(cfg)
-		coords.Calculate(action, &setProgress)
-
-		setProgress = 100.0 // stop progress output
+		coords.CalculateProgress(action, &setProgress)
 
 		// output image
 		img := m.CreatePicture(coords, ramp, cfg.XRes, cfg.YRes, setColor)
@@ -93,7 +91,7 @@ func main() {
 func showProgress(progress *float64) {
 	go func() {
 		ticker := time.NewTicker(500 * time.Millisecond)
-		for *progress < 100.0 {
+		for *progress < 1.0 {
 			select {
 			case <-ticker.C:
 				// the ansi escape code here moves the cursor left 100 characters

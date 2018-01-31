@@ -52,8 +52,10 @@ func (coords *Set) Initialize(cfg Config) {
 	}
 }
 
-// Calculate performs `action` on all the coordinates in a MandelSet.
-func (coords Set) Calculate(action Action, progress *float64) {
+// CalculateProgress performs `action` on all the coordinates in a Set.
+// The progress can be obtained by providing the address of a float64 in which
+// [0,1] will be written.
+func (coords Set) CalculateProgress(action Action, progress *float64) {
 	// concurrent implementation of actually computing mandelbrot set
 	//
 	// buffered input channel to hold values, 1 for each worker so none have
@@ -85,7 +87,11 @@ func (coords Set) Calculate(action Action, progress *float64) {
 
 	close(in) // close channel to stop workers
 	wg.Wait() // wait for all workers to finish (join)
+}
 
+// Calculate performs `action` on all the coordinates in a Set.
+func (coords Set) Calculate(action Action) {
+	coords.CalculateProgress(action, nil)
 }
 
 // WriteData writes a Set to filename as a gob (go object serialization).
@@ -181,7 +187,6 @@ func CreatePicture(coords Set, ramp []color.RGBA, width, height int, setColor co
 				}
 			}
 			wg.Done()
-
 		}(w)
 	}
 

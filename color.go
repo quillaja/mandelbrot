@@ -7,6 +7,86 @@ import (
 	"io/ioutil"
 )
 
+// Stop represents a color stop and its position within a color ramp.
+type Stop struct {
+	Position int    `json:"position,omitempty"`
+	Color    string `json:"color,omitempty"`
+}
+
+// RGBA converts the `Stop` to `color.RGBA`.
+func (s Stop) RGBA() color.RGBA {
+	return HexToRGBA(s.Color)
+}
+
+// HexToRGBA converts a hex string in the form "RRGGBB" to a color.RGBA.
+// The alpha component is always 255 (opaque).
+func HexToRGBA(hexColor string) color.RGBA {
+	components, err := hex.DecodeString(hexColor)
+	if err != nil {
+		panic(err)
+	}
+	return color.RGBA{
+		R: components[0],
+		G: components[1],
+		B: components[2],
+		A: 255}
+}
+
+// ReadStops reads and returns the list of `Stop` from the json file.
+func ReadStops(filename string) []Stop {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+	var stops []Stop
+	err = json.Unmarshal(data, &stops)
+	if err != nil {
+		panic(err)
+	}
+
+	return stops
+}
+
+// MakeRamp uses a list of `Stop` to create a color ramp.
+func MakeRamp(stops []Stop) (ramp []color.RGBA) {
+	for is := 0; is < len(stops)-1; is++ {
+		cur, next := stops[is], stops[is+1]
+
+		// calculate various parameters
+		between := (next.Position - 1) - cur.Position
+		nc, cc := next.RGBA(), cur.RGBA()
+		dR := round((float64(nc.R) - float64(cc.R)) / float64(between+1))
+		dG := round((float64(nc.G) - float64(cc.G)) / float64(between+1))
+		dB := round((float64(nc.B) - float64(cc.B)) / float64(between+1))
+
+		// do interpolation between stops
+		for i := 0; i <= between; i++ {
+			ramp = append(ramp,
+				color.RGBA{
+					R: uint8(int(cc.R) + i*dR),
+					G: uint8(int(cc.G) + i*dG),
+					B: uint8(int(cc.B) + i*dB),
+					A: 255})
+		}
+
+		// add final stop color to finish ramp
+		if is == len(stops)-2 {
+			ramp = append(ramp, nc)
+		}
+	}
+
+	return
+}
+
+// utility function to round floats to ints, since golang is so
+// omniscient to realize that we don't need this crap in the std libary
+func round(val float64) int {
+	if val < 0 {
+		return int(val - 0.5)
+	}
+	return int(val + 0.5)
+}
+
 // DEPRECATED
 // MakeColorRamp produces a list of colors by interpolating
 // color values between a series of stops.
@@ -68,91 +148,3 @@ import (
 
 // 	return ramp
 // }
-
-// Stop represents a color stop and its position within a color ramp.
-type Stop struct {
-	Position int    `json:"position,omitempty"`
-	Color    string `json:"color,omitempty"`
-}
-
-// RGBA converts the `Stop` to `color.RGBA`.
-func (s Stop) RGBA() color.RGBA {
-	return HexToRGBA(s.Color)
-}
-
-// HexToRGBA converts a hex string in the form "RRGGBB" to a color.RGBA.
-// The alpha component is always 255 (opaque).
-func HexToRGBA(hexColor string) color.RGBA {
-	components, err := hex.DecodeString(hexColor)
-	if err != nil {
-		panic(err)
-	}
-	return color.RGBA{
-		R: components[0],
-		G: components[1],
-		B: components[2],
-		A: 255}
-}
-
-// ReadStops reads and returns the list of `Stop` from the json file.
-func ReadStops(filename string) []Stop {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		panic(err)
-	}
-	var stops []Stop
-	err = json.Unmarshal(data, &stops)
-	if err != nil {
-		panic(err)
-	}
-
-	return stops
-}
-
-// MakeRamp uses a list of `Stop` to create a color ramp.
-func MakeRamp(stops []Stop /*maxIteration int*/) (ramp []color.RGBA) {
-	for is := 0; is < len(stops)-1; is++ {
-		cur, next := stops[is], stops[is+1]
-
-		// calculate various parameters
-		between := (next.Position - 1) - cur.Position
-		nc, cc := next.RGBA(), cur.RGBA()
-		dR := round((float64(nc.R) - float64(cc.R)) / float64(between+1))
-		dG := round((float64(nc.G) - float64(cc.G)) / float64(between+1))
-		dB := round((float64(nc.B) - float64(cc.B)) / float64(between+1))
-
-		// do interpolation between stops
-		for i := 0; i <= between; i++ {
-			ramp = append(ramp,
-				color.RGBA{
-					R: uint8(int(cc.R) + i*dR),
-					G: uint8(int(cc.G) + i*dG),
-					B: uint8(int(cc.B) + i*dB),
-					A: 255})
-		}
-
-		// add final stop color to finish ramp
-		if is == len(stops)-2 {
-			ramp = append(ramp, nc)
-		}
-	}
-
-	// if maxIteration is greater than the length of the ramp, the ramp
-	// must be repeated.
-	// var origRamp []color.RGBA
-	// origRamp = append(origRamp, ramp...)
-	// for repeat := maxIteration / len(ramp); repeat > 0; repeat-- {
-	// 	ramp = append(ramp, origRamp...)
-	// }
-
-	return
-}
-
-// utility function to round floats to ints, since golang is so
-// omniscient to realize that we don't need this crap in the std libary
-func round(val float64) int {
-	if val < 0 {
-		return int(val - 0.5)
-	}
-	return int(val + 0.5)
-}
