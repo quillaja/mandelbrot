@@ -5,19 +5,24 @@ import (
 	m "mandelbrot"
 	"mandelbrot/cmd"
 	"math"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
 // TODO:
-// parameterize the output directory,
-// make the program create the directory if it doesn't exist,
+// Done - (see makeOutputDir) parameterize the output directory,
+// Done - (see makeOutputDir) create the directory if it doesn't exist,
 // parameterize zoom factor and iterFactor (etc)
 // parameterize starting 'zoom' (width of 4.0)
 // ?? stop after N frames instead of going until reaching Config.PlotWidth?
-// ?? aspect ratio?
+// Done - aspect ratio ... used yres/xres to alter plotheight
 
 func main() {
 	cfg, verbose := cmd.Startup()
+
+	path := makeOutputDir(cfg.ImageFile)
 
 	// alter plot_width,plot_height, iterations, image_file in order,
 	// producing a series of images which 'zoom' into the configured point.
@@ -34,17 +39,17 @@ func main() {
 	totalFrames := totalFrames(zoomFactor, cfg.PlotWidth) - 1
 	totalTime := 0.0
 
-	finalZoomLevel := cfg.PlotWidth
+	origPlotWidth := cfg.PlotWidth
 	origIterations := cfg.Iterations
-	for i := 0; cfg.PlotWidth >= finalZoomLevel; i++ {
+	for i := 0; cfg.PlotWidth >= origPlotWidth; i++ {
 		start := time.Now()
 
 		// setup parameters for this frame
 		cfg.PlotWidth = startWidth / math.Pow(zoomFactor, float64(i))
-		cfg.PlotHeight = cfg.PlotWidth
+		cfg.PlotHeight = cfg.PlotWidth * (float64(cfg.YRes) / float64(cfg.XRes))
 		// double the number of iterations every iterFactor (25) frames
 		cfg.Iterations = origIterations * 1 << uint(i/iterFactor)
-		cfg.ImageFile = fmt.Sprintf("zoom/%010d.jpg", i)
+		cfg.ImageFile = filepath.Join(path, fmt.Sprintf("%010d.jpg", i))
 		action := func(n complex128) (bool, int) {
 			return m.IsMemberMandelbrot(n, cfg.Iterations)
 		}
@@ -101,9 +106,22 @@ func showProgress(progress *float64) {
 }
 
 // could just be done with a formula, probably
-func totalFrames(zoomFactor, finalZoomLevel float64) (frames int) {
-	for curZoom := 4.0; curZoom >= finalZoomLevel; frames++ {
+func totalFrames(zoomFactor, finalWidth float64) (frames int) {
+	for curZoom := 4.0; curZoom >= finalWidth; frames++ {
 		curZoom = 4.0 / math.Pow(zoomFactor, float64(frames))
 	}
 	return
+}
+
+// Create a directory for the program output from the filename
+// provided (eg in Config.ImageFile). Creates directories if they don't exist.
+func makeOutputDir(base string) string {
+	dir, file := filepath.Split(base)
+	file = strings.Split(file, ".")[0]
+	path := filepath.Join(dir, file+"_zoom")
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		panic(err)
+	}
+	return path
 }
