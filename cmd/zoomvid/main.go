@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	m "mandelbrot"
 	"mandelbrot/cmd"
@@ -11,33 +12,37 @@ import (
 	"time"
 )
 
-// TODO:
-// Done - (see makeOutputDir) parameterize the output directory,
-// Done - (see makeOutputDir) create the directory if it doesn't exist,
-// parameterize zoom factor and iterFactor (etc)
-// parameterize starting 'zoom' (width of 4.0)
-// ?? stop after N frames instead of going until reaching Config.PlotWidth?
-// Done - aspect ratio ... used yres/xres to alter plotheight
-
 func main() {
+
+	// const startWidth = 4.0
+	// const zoomFactor = 1.05 // how 'fast' the zoom happens. must be >1.
+	// const iterFactor = 0.02 // double the number of iterations every iterFactor^-1 frames
+	var startWidth, zoomFactor, iterFactor float64
+	flag.Float64Var(&startWidth, "width", 4.0, "Starting width of the plot.")
+	flag.Float64Var(&zoomFactor, "zoom", 1.1, "How 'fast' the zoom happens. 1.05 or 1.1 is generally appropriate. Must be >1.")
+	flag.Float64Var(&iterFactor, "iter", 0.02, "Rate of increase of the iterations. Equals 1/<DoubleEveryNFrames> (eg 0.02 = 1/25).")
+	showInfo := flag.Bool("info", false, "When set, display info only and do no computation.")
 	cfg, verbose := cmd.Startup()
 
+	// params for image generation and saving
 	path := makeOutputDir(cfg.ImageFile)
+	ramp := m.MakeRamp(m.ReadStops(cfg.RampFile))
+	setColor := m.HexToRGBA(cfg.SetColor)
+
+	totalFrames := totalFrames(zoomFactor, cfg.PlotWidth)
+	totalTime := 0.0
+
+	if *showInfo {
+		fmt.Printf("Config info:\n------------\n%s\n----------\n", cfg)
+		fmt.Printf("Start width:\t%0.5e\nZoom factor:\t%0.2f\nIter. factor:\t%0.2f\n", startWidth, zoomFactor, iterFactor)
+		fmt.Printf("%d frames will be created in '%s'.\n", totalFrames, path)
+		return
+	}
 
 	// alter plot_width,plot_height, iterations, image_file in order,
 	// producing a series of images which 'zoom' into the configured point.
 	// do this non-concurrently to save CPU for mandelbrot calcs and to prevent
 	// excessive use of memory (keeping all the Sets in memory).
-
-	ramp := m.MakeRamp(m.ReadStops(cfg.RampFile))
-	setColor := m.HexToRGBA(cfg.SetColor)
-
-	const startWidth = 4.0
-	const zoomFactor = 1.1
-	const iterFactor = 25
-
-	totalFrames := totalFrames(zoomFactor, cfg.PlotWidth)
-	totalTime := 0.0
 
 	origPlotWidth := cfg.PlotWidth
 	origIterations := cfg.Iterations
@@ -45,10 +50,9 @@ func main() {
 		start := time.Now()
 
 		// setup parameters for this frame
-		cfg.PlotWidth = startWidth / math.Pow(zoomFactor, float64(i))
+		cfg.PlotWidth = startWidth * math.Pow(zoomFactor, float64(-i))
 		cfg.PlotHeight = cfg.PlotWidth * (float64(cfg.YRes) / float64(cfg.XRes))
-		// double the number of iterations every iterFactor (25) frames
-		cfg.Iterations = origIterations * 1 << uint(i/iterFactor)
+		cfg.Iterations = origIterations * 1 << uint(float64(i)*iterFactor)
 		cfg.ImageFile = filepath.Join(path, fmt.Sprintf("%010d.jpg", i))
 		action := func(n complex128) (bool, int) {
 			return m.IsMemberMandelbrot(n, cfg.Iterations)
@@ -88,6 +92,7 @@ func main() {
 	}
 }
 
+// displays textual progress every 500ms
 func showProgress(progress *float64) {
 	go func() {
 		ticker := time.NewTicker(500 * time.Millisecond)

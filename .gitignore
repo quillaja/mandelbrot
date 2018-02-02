@@ -12,9 +12,17 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+ 
+# extensionless files
+*
+!/**/
+!*.*
 
 # project errata
 *.jpg
 *.json
 *.gob
 *.in
+*.sh
+*.txt
+*.mkv
