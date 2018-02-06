@@ -49,7 +49,7 @@ func NewComplex(real, imag float64, prec uint) *Complex {
 func (z *Complex) Copy(a *Complex) *Complex {
 	if z != a {
 		z.R.Copy(&a.R)
-		z.I.Copy(&z.I)
+		z.I.Copy(&a.I)
 	}
 	return z
 }
@@ -71,8 +71,9 @@ func (z *Complex) Sub(a, b *Complex) *Complex {
 // Mul multiplies a and b and stores the result in z.
 func (z *Complex) Mul(a, b *Complex) *Complex {
 	left, right := new(big.Float), new(big.Float)
-	z.R.Sub(left.Mul(&a.R, &b.R), right.Mul(&a.I, &b.I))
+	real := new(big.Float).Sub(left.Mul(&a.R, &b.R), right.Mul(&a.I, &b.I))
 	z.I.Add(left.Mul(&a.R, &b.I), right.Mul(&a.I, &b.R))
+	z.R.Copy(real)
 	return z
 }
 
@@ -81,8 +82,9 @@ func (z *Complex) Div(a, b *Complex) *Complex {
 	left, right := new(big.Float), new(big.Float)
 	bottom := b.AbsSq()
 
-	z.R.Add(left.Mul(&a.R, &b.R), right.Mul(&a.I, &b.I)).Quo(&z.R, bottom)
+	real := new(big.Float).Add(left.Mul(&a.R, &b.R), right.Mul(&a.I, &b.I)).Quo(&z.R, bottom)
 	z.I.Sub(left.Mul(&a.I, &b.R), right.Mul(&a.R, &b.I)).Quo(&z.I, bottom)
+	z.R.Copy(real)
 	return z
 }
 
